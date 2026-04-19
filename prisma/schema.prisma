@@ -7,13 +7,119 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ColorType {
+  WHITE
+  DARK
+  LIGHT
+  COLOR
+}
+
+enum Dirtyness {
+  CLEAN
+  SOMEWHAT_DIRTY
+  DIRTY
+  NEEDS_TREATMENT
+}
+
+enum CareType {
+  TEMPERATURE
+  BEACH
+  DRYER
+  SPIN
+}
 
 model User {
   id        String   @id @default(uuid())
-  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email     String @unique
   password  String
   firstName String
   lastName  String
+}
+
+model CareInstruction {
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  name                  String
+  imageUrl              String
+  careType              CareType
+  value                 Boolean
+  clothCareInstructions ClothCareInstruction[]
+}
+
+model ClothCareInstruction {
+  cloth             Cloth           @relation(fields: [clothId], references: [id])
+  clothId           String
+  careIntruction    CareInstruction @relation(fields: [careInstructionId], references: [id])
+  careInstructionId String
+  assignedAt        DateTime        @default(now())
+  assignedBy        String
+
+  @@id([clothId, careInstructionId])
+}
+
+model Cloth {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weight                Float
+  imageUrl              String
+  colorType             ColorType
+  closet                Closet?                @relation(fields: [closetId], references: [id])
+  closetId              String?
+  clothCareInstructions ClothCareInstruction[]
+  laundryBatch          LaundryBatch?          @relation(fields: [laundryBatchId], references: [id])
+  laundryBatchId        String?
+}
+
+model Closet {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name   String
+  cloths Cloth[]
+}
+
+model WashingMachine {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name                     String
+  maxSupportedWeight       Float
+  hasDryer                 Boolean
+  maxSupportedWeightForDry Float?
+  laundryBatches           LaundryBatch[]
+}
+
+model WashingInstruccions {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  maxTemperature Float
+  washingTime    Float
+  useDryer       Boolean
+  useSpin        Boolean
+  spinRPM        Int
+  spinTime       Float
+  laundryBatches LaundryBatch[]
+}
+
+model LaundryBatch {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cloths                Cloth[]
+  washinInstructions    WashingInstruccions @relation(fields: [washingInstruccionsId], references: [id])
+  washingInstruccionsId String
+  washingMachine        WashingMachine      @relation(fields: [washingMachineId], references: [id])
+  washingMachineId      String
 }
