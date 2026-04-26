@@ -10,6 +10,7 @@ import {
     Patch,
     Post,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 
 import {
@@ -19,12 +20,17 @@ import {
     ApiQuery,
     ApiBody,
     ApiResponse,
+    ApiBearerAuth,
 } from '@nestjs/swagger';
 
 import { CrudService, ModelName } from './crud.service.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { AdminGuard } from '../auth/guards/admin.guard.js';
 
 @ApiTags('CRUD')
 @Controller('crud')
+@UseGuards(JwtAuthGuard, AdminGuard)
+@ApiBearerAuth('access-token')
 export class CrudController {
     constructor(private readonly crud: CrudService) {}
 
@@ -37,6 +43,10 @@ export class CrudController {
     @Get(':model')
     @ApiOperation({
         summary: 'Find many records',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
     })
     @ApiParam({
         name: 'model',
@@ -91,6 +101,10 @@ export class CrudController {
     @ApiOperation({
         summary: 'Find one record',
     })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
+    })
     @ApiParam({
         name: 'model',
         enum: ModelName,
@@ -118,6 +132,10 @@ export class CrudController {
     @Post(':model')
     @ApiOperation({
         summary: 'Create record',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
     })
     @ApiParam({
         name: 'model',
@@ -148,6 +166,10 @@ export class CrudController {
     @Patch(':model')
     @ApiOperation({
         summary: 'Update record',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
     })
     @ApiParam({
         name: 'model',
@@ -182,6 +204,10 @@ export class CrudController {
     @ApiOperation({
         summary: 'Delete record',
     })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
+    })
     @ApiParam({
         name: 'model',
         enum: ModelName,
@@ -210,6 +236,10 @@ export class CrudController {
     @Get(':model/count')
     @ApiOperation({
         summary: 'Count records',
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Unauthorized - JWT token required',
     })
     @ApiParam({
         name: 'model',

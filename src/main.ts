@@ -9,6 +9,15 @@ async function bootstrap() {
         .setTitle('Laundry App Backend API')
         .setDescription('The laundry app backend API description')
         .setVersion(packageJson.version)
+        .addBearerAuth(
+            {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                description: 'Enter JWT token without "Bearer " prefix',
+            },
+            'access-token',
+        )
         .build();
     const documentFactory = () => SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, documentFactory);

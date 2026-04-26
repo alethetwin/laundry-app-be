@@ -4,15 +4,15 @@ import { APP_PIPE } from '@nestjs/core';
 import { PrismaService } from './prisma.service.js';
 import { CrudModule } from './modules/crud/crud.module.js';
 import { LogsModule } from './modules/logger/logger.module.js';
-import { UserModule } from './modules/user/user.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
         LogsModule,
+        AuthModule,
         CrudModule,
-        UserModule,
     ],
     controllers: [],
     providers: [
