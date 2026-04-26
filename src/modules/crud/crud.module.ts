@@ -7,5 +7,6 @@ import { LoggerService } from '../logger/logger.service.js';
 @Module({
     controllers: [CrudController],
     providers: [CrudService, PrismaService, LoggerService],
+    exports: [CrudService],
 })
 export class CrudModule {}
