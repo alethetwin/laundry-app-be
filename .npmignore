@@ -1,0 +1,59 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+coverage
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+logs
+*.log
+
+# IDE files
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# Documentation (keep README)
+docs
+*.md
+!README.md
+
+# Scripts (keep generate-api-client)
+scripts
+!scripts/generate-api-client.js
+
+# Tests
+test
+**/*.spec.ts
+**/*.test.ts
+
+# Config files
+.prettierrc
+.eslintrc*
+tsconfig*.json
+nest-cli.json
+prisma
+
+# Docker
+Dockerfile
+docker-compose*
+
+# Postman
+.postman
+postman
