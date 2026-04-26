@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma.service.js';
 import { PasswordService } from './password.service.js';
 import { LoggerService } from '../logger/logger.service.js';
+import { User } from '../../generated/prisma/client.js';
 
 @Injectable()
 export class AuthService {
@@ -56,18 +57,14 @@ export class AuthService {
         }
     }
 
-    async login(user: {
-        id: string;
-        email: string;
-        firstName: string;
-        lastName: string;
-    }) {
+    async login(user: Omit<User, 'password'>) {
         try {
             const payload = {
                 sub: user.id,
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                role: user.role,
             };
 
             const token = this.jwtService.sign(payload);
@@ -84,6 +81,7 @@ export class AuthService {
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
+                    role: user.role,
                 },
             };
         } catch (error) {
