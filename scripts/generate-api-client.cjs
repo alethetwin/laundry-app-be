@@ -49,6 +49,7 @@ function downloadOpenApiSpec() {
             });
     });
 }
+// test
 
 // Generate TypeScript types from OpenAPI spec
 function generateTypes() {
