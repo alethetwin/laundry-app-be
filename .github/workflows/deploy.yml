@@ -56,8 +56,12 @@ jobs:
               run: |
                   cd api-client
                   echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-                  cat .npmrc
-                  npm publish --access public
+                  echo "Checking .npmrc contents:"
+                  cat .npmrc | head -c 50
+                  echo "..."
+                  echo "Token exists: ${{ secrets.NPM_TOKEN != '' }}"
+                  echo "Attempting to publish..."
+                  npm publish --access public --provenance || npm publish --access public
 
             - name: Stop application
               run: |
