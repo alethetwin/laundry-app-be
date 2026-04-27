@@ -2,7 +2,7 @@ name: CI
 
 on:
     pull_request:
-        branches: [ main ]
+        branches: [main]
 
 jobs:
     build:
@@ -10,6 +10,32 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Check if package.json version was updated
+              run: |
+                  # Get the version from the current branch
+                  CURRENT_VERSION=$(jq -r '.version' package.json)
+
+                  # Get the version from the main branch
+                  git fetch origin main
+                  git checkout origin/main -- package.json
+                  MAIN_VERSION=$(jq -r '.version' package.json)
+
+                  # Restore the current package.json
+                  git checkout HEAD -- package.json
+
+                  # Check if versions are different
+                  if [ "$CURRENT_VERSION" = "$MAIN_VERSION" ]; then
+                    echo "❌ ERROR: La versión en package.json no ha sido actualizada"
+                    echo "Versión actual: $CURRENT_VERSION"
+                    echo "Versión en main: $MAIN_VERSION"
+                    echo "Por favor, actualiza la versión del paquete antes de crear el PR"
+                    exit 1
+                  else
+                    echo "✅ Versión actualizada correctamente: $MAIN_VERSION → $CURRENT_VERSION"
+                  fi
 
             - name: Build Docker image
               run: docker build .
