@@ -30,14 +30,6 @@ jobs:
               run: npm run build
 
             - name: Start application for API client generation
-              if: runner.os == 'Windows'
-              shell: powershell
-              run: |
-                  Start-Process -FilePath "npm" -ArgumentList "run","start:prod" -WindowStyle Hidden
-                  Start-Sleep -Seconds 10
-
-            - name: Start application for API client generation
-              if: runner.os == 'Linux'
               run: |
                   npm run start:prod &
                   sleep 10
@@ -45,11 +37,7 @@ jobs:
             - name: Generate API client
               run: |
                   echo "Checking if server is running..."
-                  if [[ "$RUNNER_OS" == "Windows" ]]; then
-                    curl -s http://localhost:3000/health-check || echo "Server not responding"
-                  else
-                    curl -s http://localhost:3000/health-check || echo "Server not responding"
-                  fi
+                  curl -s http://localhost:3000/health-check || echo "Server not responding"
                   echo "Generating API client..."
                   node scripts/generate-api-client.cjs
                   echo "Checking generated files..."
@@ -66,13 +54,6 @@ jobs:
                   npm publish --access public
 
             - name: Stop application
-              if: runner.os == 'Windows'
-              shell: powershell
-              run: |
-                  Get-Process | Where-Object {$_.ProcessName -eq "node"} | Stop-Process -Force
-
-            - name: Stop application
-              if: runner.os == 'Linux'
               run: |
                   pkill -f "node dist/main" || true
 
