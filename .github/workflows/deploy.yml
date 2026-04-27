@@ -2,6 +2,8 @@ name: Build & Push Backend
 
 on:
     push:
+        branches:
+            - main
 
 jobs:
     build:
