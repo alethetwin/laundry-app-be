@@ -393,11 +393,17 @@ async function main() {
     try {
         console.log('🚀 Generating API client...');
 
+        // Create output directory if it doesn't exist
+        if (!fs.existsSync(OUTPUT_DIR)) {
+            console.log('📁 Creating output directory...');
+            fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+        }
+
         // Check if openapi.json already exists
         if (fs.existsSync(path.join(OUTPUT_DIR, 'openapi.json'))) {
-            console.log('� Using existing OpenAPI specification...');
+            console.log('📄 Using existing OpenAPI specification...');
         } else {
-            console.log('�� Downloading OpenAPI specification...');
+            console.log('📥 Downloading OpenAPI specification...');
             await downloadOpenApiSpec();
         }
 
@@ -414,6 +420,7 @@ async function main() {
         console.log('📝 To publish: cd api-client && npm publish');
     } catch (error) {
         console.error('❌ Error generating API client:', error.message);
+        console.error('Stack trace:', error.stack);
         process.exit(1);
     }
 }

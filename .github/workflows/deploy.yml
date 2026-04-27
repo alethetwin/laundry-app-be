@@ -44,7 +44,16 @@ jobs:
 
             - name: Generate API client
               run: |
+                  echo "Checking if server is running..."
+                  if [[ "$RUNNER_OS" == "Windows" ]]; then
+                    curl -s http://localhost:3000/health-check || echo "Server not responding"
+                  else
+                    curl -s http://localhost:3000/health-check || echo "Server not responding"
+                  fi
+                  echo "Generating API client..."
                   node scripts/generate-api-client.cjs
+                  echo "Checking generated files..."
+                  ls -la api-client/ || echo "api-client directory not found"
                   cd api-client
                   npm install
                   npm run build
