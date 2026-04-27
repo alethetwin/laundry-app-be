@@ -49,6 +49,7 @@ function downloadOpenApiSpec() {
             });
     });
 }
+// test
 
 // Generate TypeScript types from OpenAPI spec
 function generateTypes() {
@@ -150,6 +151,21 @@ export class LaundryAppApiClient {
         this.timeout = config.timeout || 10000;
     }
 
+    // Set or update the API key
+    setApiKey(apiKey: string): void {
+        this.apiKey = apiKey;
+    }
+
+    // Get current API key
+    getApiKey(): string | undefined {
+        return this.apiKey;
+    }
+
+    // Update base URL
+    setBaseURL(baseURL: string): void {
+        this.baseURL = baseURL;
+    }
+
     private async request<T>(
         path: string,
         options: RequestInit = {}
@@ -189,15 +205,37 @@ export class LaundryAppApiClient {
     }
 `;
 
-    // Generate methods for each endpoint
+    // Group endpoints by controller/tag
+    const controllerGroups = {};
+
     Object.entries(paths).forEach(([path, pathItem]) => {
         Object.entries(pathItem).forEach(([method, operation]) => {
             if (method === 'parameters' || method === 'summary') return;
 
+            // Get controller name from tags or path
+            const tags = operation.tags || [];
+            let controllerName = 'default';
+
+            if (tags.length > 0) {
+                controllerName = tags[0].toLowerCase();
+            } else {
+                // Extract from path (e.g., /auth/login -> auth)
+                const pathParts = path
+                    .split('/')
+                    .filter((p) => p && !p.startsWith('{'));
+                if (pathParts.length > 0) {
+                    controllerName = pathParts[0].toLowerCase();
+                }
+            }
+
+            if (!controllerGroups[controllerName]) {
+                controllerGroups[controllerName] = [];
+            }
+
             const methodName = getMethodName(
                 operation.operationId,
-                method,
                 path,
+                method,
             );
             const parameters = getParameters(operation);
             const requestBody = getRequestBody(operation);
@@ -208,15 +246,46 @@ export class LaundryAppApiClient {
                 return '${' + paramName + '}';
             });
 
+            controllerGroups[controllerName].push({
+                methodName,
+                parameters,
+                requestBody,
+                responseType,
+                pathTemplate,
+                method: method.toUpperCase(),
+                description:
+                    operation.summary ||
+                    operation.description ||
+                    `${method.toUpperCase()} ${path}`,
+                path,
+            });
+        });
+    });
+
+    // Generate nested controller objects
+    Object.entries(controllerGroups).forEach(([controllerName, methods]) => {
+        // Sanitize controller name for JavaScript property
+        const sanitizedControllerName = controllerName.replace(
+            /[^a-zA-Z0-9]/g,
+            '',
+        );
+        content += `
+    // ${capitalizeFirstLetter(sanitizedControllerName)} controller methods
+    ${sanitizedControllerName} = {`;
+
+        methods.forEach((method) => {
             content += `
-    // ${operation.summary || operation.description || `${method.toUpperCase()} ${path}`}
-    async ${methodName}(${parameters}): Promise<${responseType}> {
-        return this.request<${responseType}>(\`\${this.baseURL}${pathTemplate}\`, {
-            method: '${method.toUpperCase()}',
-            ${requestBody ? `body: JSON.stringify(${requestBody}),` : ''}
+        // ${method.description}
+        ${method.methodName}: async (${method.parameters}): Promise<${method.responseType}> => {
+            return this.request<${method.responseType}>(\`\${this.baseURL}${method.pathTemplate}\`, {
+                method: '${method.method}',
+                ${method.requestBody ? `body: JSON.stringify(${method.requestBody}),` : ''}
+            });
+        },`;
         });
-    }`;
-        });
+
+        content += `
+    };`;
     });
 
     content += `
@@ -234,15 +303,48 @@ export default LaundryAppApiClient;
     return content;
 }
 
-function getMethodName(operationId, method, path) {
+function getMethodName(operationId, path, method) {
+    // Use operationId if available, clean it up
     if (operationId) {
-        return operationId.replace(/[^a-zA-Z0-9]/g, '');
+        // Handle format like "AuthController_register"
+        const underscoreMatch = operationId.match(/^(.+?)_([a-zA-Z].*)$/);
+        if (underscoreMatch) {
+            // Convert to camelCase: "register" -> "register", "getProfile" -> "getProfile"
+            const methodPart = underscoreMatch[2];
+            return methodPart.charAt(0).toLowerCase() + methodPart.slice(1);
+        }
+
+        // Handle format like "AuthControllerregister" (fallback)
+        const cleanName = operationId.replace(/[^a-zA-Z0-9]/g, '');
+        const controllerMatch = cleanName.match(
+            /^(.+?)(Controller[A-Z][a-z]+.*)$/,
+        );
+        if (controllerMatch) {
+            return controllerMatch[2].replace(/^Controller/, '');
+        }
+
+        if (cleanName.startsWith('Controller')) {
+            return cleanName.replace(/^Controller/, '');
+        }
+
+        return cleanName;
     }
 
     // Generate method name from path and HTTP method
     const pathParts = path.split('/').filter((p) => p && !p.startsWith('{'));
-    const pathName = pathParts.map((p) => capitalizeFirstLetter(p)).join('');
-    return method.toLowerCase() + capitalizeFirstLetter(pathName);
+
+    // Remove first part (controller) and use the rest
+    const methodParts = pathParts.slice(1);
+
+    if (methodParts.length > 0) {
+        const pathName = methodParts
+            .map((p) => capitalizeFirstLetter(p))
+            .join('');
+        return method.toLowerCase() + capitalizeFirstLetter(pathName);
+    }
+
+    // Fallback to just method name
+    return method.toLowerCase();
 }
 
 function getParameters(operation) {
@@ -312,7 +414,7 @@ function generatePackageJson() {
         files: ['types.ts', 'index.js', 'README.md'],
         repository: {
             type: 'git',
-            url: 'https://github.com/AleTheTwin/laundry-app-be.git',
+            url: 'git+https://github.com/AleTheTwin/laundry-app-be.git',
             directory: 'api-client',
         },
     };
@@ -327,7 +429,8 @@ function generatePackageJson() {
 function generateIndexTs() {
     const indexContent = `// Main entry point for Laundry App API Client
 export * from './types';
-export { LaundryAppApiClient, createApiClient } from './types';
+import { LaundryAppApiClient, createApiClient } from './types';
+export { LaundryAppApiClient, createApiClient };
 export default LaundryAppApiClient;
 `;
 
@@ -392,11 +495,17 @@ async function main() {
     try {
         console.log('🚀 Generating API client...');
 
+        // Create output directory if it doesn't exist
+        if (!fs.existsSync(OUTPUT_DIR)) {
+            console.log('📁 Creating output directory...');
+            fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+        }
+
         // Check if openapi.json already exists
         if (fs.existsSync(path.join(OUTPUT_DIR, 'openapi.json'))) {
-            console.log('� Using existing OpenAPI specification...');
+            console.log('📄 Using existing OpenAPI specification...');
         } else {
-            console.log('�� Downloading OpenAPI specification...');
+            console.log('📥 Downloading OpenAPI specification...');
             await downloadOpenApiSpec();
         }
 
@@ -413,6 +522,7 @@ async function main() {
         console.log('📝 To publish: cd api-client && npm publish');
     } catch (error) {
         console.error('❌ Error generating API client:', error.message);
+        console.error('Stack trace:', error.stack);
         process.exit(1);
     }
 }

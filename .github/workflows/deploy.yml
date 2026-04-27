@@ -2,7 +2,8 @@ name: Build & Push Backend
 
 on:
     push:
-        branches: [main]
+        branches:
+            - main
 
 jobs:
     build:
@@ -31,13 +32,23 @@ jobs:
               run: npm run build
 
             - name: Start application for API client generation
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+                  PORT: 3000
               run: |
                   npm run start:prod &
                   sleep 10
 
             - name: Generate API client
               run: |
+                  echo "Checking if server is running..."
+                  curl -s http://localhost:3000/health-check || echo "Server not responding"
+                  echo "Generating API client..."
                   node scripts/generate-api-client.cjs
+                  echo "Checking generated files..."
+                  ls -la api-client/ || echo "api-client directory not found"
                   cd api-client
                   npm install
                   npm run build
@@ -50,7 +61,8 @@ jobs:
                   npm publish --access public
 
             - name: Stop application
-              run: pkill -f "node dist/main" || true
+              run: |
+                  pkill -f "node dist/main" || true
 
             - name: Login to GHCR
               run:
