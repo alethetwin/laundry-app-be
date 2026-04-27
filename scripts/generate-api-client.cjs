@@ -271,12 +271,12 @@ export class LaundryAppApiClient {
         );
         content += `
     // ${capitalizeFirstLetter(sanitizedControllerName)} controller methods
-    ${sanitizedControllerName}: {`;
+    ${sanitizedControllerName} = {`;
 
         methods.forEach((method) => {
             content += `
         // ${method.description}
-        async ${method.methodName}(${method.parameters}): Promise<${method.responseType}> {
+        ${method.methodName}: async (${method.parameters}): Promise<${method.responseType}> => {
             return this.request<${method.responseType}>(\`\${this.baseURL}${method.pathTemplate}\`, {
                 method: '${method.method}',
                 ${method.requestBody ? `body: JSON.stringify(${method.requestBody}),` : ''}
@@ -285,7 +285,7 @@ export class LaundryAppApiClient {
         });
 
         content += `
-    },`;
+    };`;
     });
 
     content += `
